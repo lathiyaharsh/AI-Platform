@@ -5,40 +5,44 @@ from app.embeddings.base import BaseEmbedder
 
 
 class HuggingFaceEmbedder(BaseEmbedder):
+    """
+    Hugging Face Embedding Provider
+    Uses the Hugging Face Inference API.
+    """
 
     def __init__(self):
         self.url = (
-            f"https://api-inference.huggingface.co/"
-            f"pipeline/feature-extraction/"
+            "https://router.huggingface.co/hf-inference/models/"
             f"{settings.hf_embed_model}"
         )
 
         self.headers = {
-            "Authorization":
-            f"Bearer {settings.huggingface_api_key}"
+            "Authorization": f"Bearer {settings.huggingface_api_key}",
+            "Content-Type": "application/json",
         }
 
-    async def embed(
-        self,
-        text: str,
-    ) -> list[float]:
+    async def embed(self, text: str) -> list[float]:
 
-        async with httpx.AsyncClient() as client:
+        payload = {
+            "inputs": text,
+        }
+
+        async with httpx.AsyncClient(timeout=60) as client:
 
             response = await client.post(
                 self.url,
                 headers=self.headers,
-                json={
-                    "inputs": text
-                },
-                timeout=60,
+                json=payload,
             )
 
             response.raise_for_status()
 
-            vector = response.json()
+            data = response.json()
 
-            if isinstance(vector[0], list):
-                return vector[0]
+        # Some models return [[...]]
+        if isinstance(data, list):
+            if data and isinstance(data[0], list):
+                return data[0]
+            return data
 
-            return vector
+        raise ValueError(f"Unexpected HF response: {data}")
