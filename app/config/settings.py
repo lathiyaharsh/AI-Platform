@@ -42,6 +42,13 @@ class Settings(BaseSettings):
     semantic_cache: bool = True
     reflection_enabled: bool = True
 
+    # ==========================
+    # Retry
+    # ==========================
+
+    max_retries: int = 2
+    retry_delay: float = 1.0
+
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=False,

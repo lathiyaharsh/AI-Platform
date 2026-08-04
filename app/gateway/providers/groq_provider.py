@@ -2,6 +2,7 @@ from groq import AsyncGroq
 
 from app.config.settings import settings
 from app.gateway.providers.base import BaseProvider
+from app.gateway.providers.exceptions import ProviderError
 
 
 class GroqProvider(BaseProvider):
@@ -31,9 +32,18 @@ class GroqProvider(BaseProvider):
             }
         )
 
-        response = await self.client.chat.completions.create(
-            model=settings.default_model,
-            messages=messages,
-        )
+        try:
+            response = await self.client.chat.completions.create(
+                model=settings.default_model,
+                messages=messages,
+            )
 
-        return response.choices[0].message.content
+            content = response.choices[0].message.content
+            if content is None:
+                raise ProviderError("Groq returned empty response")
+            return content
+
+        except ProviderError:
+            raise
+        except Exception as e:
+            raise ProviderError(str(e)) from e

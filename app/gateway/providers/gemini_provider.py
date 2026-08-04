@@ -2,6 +2,7 @@ from google import genai
 
 from app.config.settings import settings
 from app.gateway.providers.base import BaseProvider
+from app.gateway.providers.exceptions import ProviderError
 
 
 class GeminiProvider(BaseProvider):
@@ -19,9 +20,17 @@ class GeminiProvider(BaseProvider):
         if system_prompt:
             full_prompt = f"{system_prompt}\n\n{prompt}"
 
-        response = self.client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=full_prompt,
-        )
+        try:
+            response = self.client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=full_prompt,
+            )
 
-        return response.text
+            text = response.text
+            if text is None:
+                raise ProviderError("Gemini returned empty response")
+            return text
+        except ProviderError:
+            raise
+        except Exception as e:
+            raise ProviderError(str(e)) from e

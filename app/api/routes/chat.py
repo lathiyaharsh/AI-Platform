@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 
 from app.api.dependencies.gateway import get_gateway
 from app.gateway.gateway import Gateway
+from app.prompts.manager import PromptManager
 
 router = APIRouter()
 
