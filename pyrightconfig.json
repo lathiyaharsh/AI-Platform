@@ -1,11 +1,13 @@
 {
   "venvPath": ".",
   "venv": ".venv",
+  "python": ".venv/bin/python",
   "pythonVersion": "3.12",
   "executionEnvironments": [
     {
       "root": ".",
       "pythonVersion": "3.12",
+      "python": ".venv/bin/python",
       "extraPaths": ["."]
     }
   ]

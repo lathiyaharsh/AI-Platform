@@ -1,13 +1,15 @@
 from asyncio import sleep
+from uuid import uuid4
 
 from app.cache.exact_cache import ExactCache
 from app.cache.semantic_cache import SemanticCache
 from app.config.constants import Provider
 from app.config.settings import settings
-from app.gateway.router import Router
 from app.gateway.providers.exceptions import ProviderError
 from app.gateway.providers.gemini_provider import GeminiProvider
 from app.gateway.providers.groq_provider import GroqProvider
+from app.gateway.router import Router
+from app.memory.service import MemoryService
 from app.observability.logger import app_logger
 from app.prompts.manager import PromptManager
 
@@ -20,13 +22,17 @@ class Gateway:
 
     - Routing
     - Prompt rendering
+    - Conversation memory
     - Exact cache
     - Semantic cache
     - Retry
     - Fallback
     """
 
-    def __init__(self):
+    def __init__(
+        self,
+        memory: MemoryService | None = None,
+    ) -> None:
 
         self.router = Router()
 
@@ -36,6 +42,8 @@ class Gateway:
 
         self.semantic_cache = SemanticCache()
 
+        self.memory = memory or MemoryService()
+
         self.providers = {
             Provider.GROQ: GroqProvider(),
             Provider.GEMINI: GeminiProvider(),
@@ -44,36 +52,19 @@ class Gateway:
     async def generate(
         self,
         prompt: str,
+        session_id: str | None = None,
     ) -> str:
 
-        #
-        # 1. Exact Cache
-        #
-
-        cached = self.exact_cache.get(prompt)
-
-        if cached:
-
-            app_logger.info("Exact Cache HIT")
-
-            return cached
+        session_id = session_id or str(uuid4())
 
         #
-        # 2. Semantic Cache
+        # 1. Load conversation history
         #
 
-        cached = await self.semantic_cache.get(prompt)
-
-        if cached:
-
-            app_logger.info("Semantic Cache HIT")
-
-            self.exact_cache.set(prompt, cached)
-
-            return cached
+        history = await self.memory.build_history_text(session_id)
 
         #
-        # 3. Intelligent Routing
+        # 2. Intelligent Routing
         #
 
         decision = self.router.route(prompt)
@@ -81,16 +72,55 @@ class Gateway:
         provider = self.providers[decision.provider]
 
         #
-        # 4. Prompt Rendering
+        # 3. Prompt Rendering (PromptManager owns templates)
         #
 
         final_prompt = self.prompt_manager.render(
             decision.route.value,
+            history=history,
             input=prompt,
         )
 
         #
-        # 5. Retry
+        # 4. Exact Cache (keyed on full rendered prompt)
+        #
+
+        cached = self.exact_cache.get(final_prompt)
+
+        if cached:
+
+            app_logger.info("Exact Cache HIT")
+
+            await self._persist_turn(
+                session_id=session_id,
+                prompt=prompt,
+                response=cached,
+            )
+
+            return cached
+
+        #
+        # 5. Semantic Cache
+        #
+
+        cached = await self.semantic_cache.get(final_prompt)
+
+        if cached:
+
+            app_logger.info("Semantic Cache HIT")
+
+            self.exact_cache.set(final_prompt, cached)
+
+            await self._persist_turn(
+                session_id=session_id,
+                prompt=prompt,
+                response=cached,
+            )
+
+            return cached
+
+        #
+        # 6. Retry
         #
 
         for attempt in range(settings.max_retries):
@@ -99,24 +129,26 @@ class Gateway:
 
                 app_logger.info(
                     f"Provider={decision.provider.value} "
-                    f"Attempt={attempt+1}"
+                    f"Attempt={attempt + 1}"
                 )
 
                 response = await provider.generate(
                     prompt=final_prompt,
                 )
 
-                #
-                # Save to caches
-                #
+                await self._persist_turn(
+                    session_id=session_id,
+                    prompt=prompt,
+                    response=response,
+                )
 
                 self.exact_cache.set(
-                    prompt,
+                    final_prompt,
                     response,
                 )
 
                 await self.semantic_cache.set(
-                    prompt,
+                    final_prompt,
                     response,
                 )
 
@@ -132,7 +164,7 @@ class Gateway:
                 await sleep(settings.retry_delay)
 
         #
-        # 6. Fallback
+        # 7. Fallback
         #
 
         app_logger.warning(
@@ -145,18 +177,29 @@ class Gateway:
             prompt=final_prompt,
         )
 
-        #
-        # Save caches
-        #
+        await self._persist_turn(
+            session_id=session_id,
+            prompt=prompt,
+            response=response,
+        )
 
         self.exact_cache.set(
-            prompt,
+            final_prompt,
             response,
         )
 
         await self.semantic_cache.set(
-            prompt,
+            final_prompt,
             response,
         )
 
         return response
+
+    async def _persist_turn(
+        self,
+        session_id: str,
+        prompt: str,
+        response: str,
+    ) -> None:
+        await self.memory.add_user_message(session_id, prompt)
+        await self.memory.add_assistant_message(session_id, response)

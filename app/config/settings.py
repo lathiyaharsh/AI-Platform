@@ -58,6 +58,12 @@ class Settings(BaseSettings):
     hf_embed_dim: int = 384
     semantic_cache_threshold: float = 0.90
 
+    # ==========================
+    # Memory
+    # ==========================
+
+    memory_window: int = 10
+
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=False,

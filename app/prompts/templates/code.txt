@@ -4,6 +4,4 @@ Write clean, production-ready code.
 
 Explain your reasoning briefly.
 
-User Request:
-
-{{input}}
+{{history}}User: {{input}}

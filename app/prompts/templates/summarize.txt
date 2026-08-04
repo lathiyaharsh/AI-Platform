@@ -2,6 +2,4 @@ You are an expert at summarizing documents.
 
 Provide a concise summary.
 
-Document:
-
-{{input}}
+{{history}}User: {{input}}
