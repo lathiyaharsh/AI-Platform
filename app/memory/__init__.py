@@ -1,1 +1,1 @@
-"""Short-term conversation memory."""
+"""Conversation memory and context assembly."""

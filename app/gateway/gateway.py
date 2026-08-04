@@ -9,6 +9,7 @@ from app.gateway.providers.exceptions import ProviderError
 from app.gateway.providers.gemini_provider import GeminiProvider
 from app.gateway.providers.groq_provider import GroqProvider
 from app.gateway.router import Router
+from app.memory.context_builder import ContextBuilder
 from app.memory.service import MemoryService
 from app.observability.logger import app_logger
 from app.prompts.manager import PromptManager
@@ -21,7 +22,7 @@ class Gateway:
     Responsibilities
 
     - Routing
-    - Prompt rendering
+    - Context building
     - Conversation memory
     - Exact cache
     - Semantic cache
@@ -44,6 +45,11 @@ class Gateway:
 
         self.memory = memory or MemoryService()
 
+        self.context_builder = ContextBuilder(
+            memory=self.memory,
+            prompt_manager=self.prompt_manager,
+        )
+
         self.providers = {
             Provider.GROQ: GroqProvider(),
             Provider.GEMINI: GeminiProvider(),
@@ -58,13 +64,7 @@ class Gateway:
         session_id = session_id or str(uuid4())
 
         #
-        # 1. Load conversation history
-        #
-
-        history = await self.memory.build_history_text(session_id)
-
-        #
-        # 2. Intelligent Routing
+        # 1. Intelligent Routing
         #
 
         decision = self.router.route(prompt)
@@ -72,17 +72,17 @@ class Gateway:
         provider = self.providers[decision.provider]
 
         #
-        # 3. Prompt Rendering (PromptManager owns templates)
+        # 2. Context Building (history + memory + docs + input)
         #
 
-        final_prompt = self.prompt_manager.render(
-            decision.route.value,
-            history=history,
-            input=prompt,
+        final_prompt = await self.context_builder.build(
+            session_id=session_id,
+            user_input=prompt,
+            prompt_name=decision.route.value,
         )
 
         #
-        # 4. Exact Cache (keyed on full rendered prompt)
+        # 3. Exact Cache (keyed on full rendered prompt)
         #
 
         cached = self.exact_cache.get(final_prompt)
@@ -100,7 +100,7 @@ class Gateway:
             return cached
 
         #
-        # 5. Semantic Cache
+        # 4. Semantic Cache
         #
 
         cached = await self.semantic_cache.get(final_prompt)
@@ -120,7 +120,7 @@ class Gateway:
             return cached
 
         #
-        # 6. Retry
+        # 5. Retry
         #
 
         for attempt in range(settings.max_retries):
@@ -164,7 +164,7 @@ class Gateway:
                 await sleep(settings.retry_delay)
 
         #
-        # 7. Fallback
+        # 6. Fallback
         #
 
         app_logger.warning(

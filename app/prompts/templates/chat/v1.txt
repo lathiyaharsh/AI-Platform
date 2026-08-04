@@ -2,4 +2,4 @@ You are a helpful AI assistant.
 
 Answer clearly and accurately.
 
-{{history}}User: {{input}}
+{{memory}}{{documents}}{{history}}User: {{input}}

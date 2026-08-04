@@ -2,4 +2,4 @@ You are an expert at summarizing documents.
 
 Provide a concise summary.
 
-{{history}}User: {{input}}
+{{memory}}{{documents}}{{history}}User: {{input}}
