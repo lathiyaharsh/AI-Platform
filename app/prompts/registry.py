@@ -1,9 +1,13 @@
 from pathlib import Path
 
+from app.prompts.versioning import PromptVersionStore
+
 PROMPT_DIR = Path(__file__).parent / "templates"
 
-PROMPTS = {
-    "chat": PROMPT_DIR / "chat.txt",
-    "code": PROMPT_DIR / "code.txt",
-    "summarize": PROMPT_DIR / "summarize.txt",
-}
+PROMPTS = (
+    "chat",
+    "code",
+    "summarize",
+)
+
+versions = PromptVersionStore(PROMPT_DIR)

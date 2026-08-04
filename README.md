@@ -461,7 +461,7 @@ LOG_LEVEL=INFO
 
 # 🚧 Roadmap
 
-> **Current progress:** Phases 1–4 core path is live (`POST /chat` → router → prompts → exact/semantic cache → Groq/Gemini with retry/fallback → in-memory conversation memory). Persistence (Postgres/Redis), RAG, agents, reflection, tools, and deployment are still ahead.
+> **Current progress:** Phases 1–4 core path is live (`POST /chat` → router → versioned prompts → exact/semantic cache → Groq/Gemini with retry/fallback → in-memory conversation memory). Persistence (Postgres/Redis), RAG, agents, reflection, tools, and deployment are still ahead.
 
 ## Phase 1 — Production AI Gateway
 
@@ -476,7 +476,7 @@ LOG_LEVEL=INFO
 ## Phase 2 — Prompt Management
 
 - [x] Prompt Manager
-- [ ] Prompt Versioning
+- [x] Prompt Versioning (file-based history, active version, rollback)
 - [x] Prompt Registry
 
 ---
