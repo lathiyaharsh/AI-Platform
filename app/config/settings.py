@@ -49,6 +49,15 @@ class Settings(BaseSettings):
     max_retries: int = 2
     retry_delay: float = 1.0
 
+    # ==========================
+    # Embeddings
+    # ==========================
+
+    embedding_provider: str = "huggingface"
+    hf_embed_model: str = "BAAI/bge-small-en-v1.5"
+    hf_embed_dim: int = 384
+    semantic_cache_threshold: float = 0.90
+
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=False,
