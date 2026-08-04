@@ -1,19 +1,20 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
-from app.gateway.providers.groq_provider import GroqProvider
+from app.api.dependencies.gateway import get_gateway
+from app.gateway.gateway import Gateway
 
 router = APIRouter()
 
 
 @router.get("/chat")
-async def chat():
+async def chat(
+    gateway: Gateway = Depends(get_gateway),
+):
 
-    provider = GroqProvider()
-
-    answer = await provider.generate(
-        "Say hello in one sentence."
+    answer = await gateway.generate(
+        prompt="Explain FastAPI in one sentence."
     )
 
     return {
-        "response": answer,
+        "response": answer
     }
