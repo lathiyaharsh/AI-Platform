@@ -1,6 +1,6 @@
 from typing import Protocol, runtime_checkable
 
-from app.memory.models import Message
+from app.memory.models import MemoryFact, Message
 
 
 @runtime_checkable
@@ -31,4 +31,34 @@ class ConversationStore(Protocol):
     async def delete_session(
         self,
         session_id: str,
+    ) -> None: ...
+
+
+@runtime_checkable
+class LongTermMemoryStore(Protocol):
+    """
+    Storage interface for durable user facts.
+
+    Swap in Redis/PostgreSQL later without changing LongTermMemoryService.
+    """
+
+    async def save_fact(
+        self,
+        fact: MemoryFact,
+    ) -> None: ...
+
+    async def get_facts(
+        self,
+        user_id: str,
+    ) -> list[MemoryFact]: ...
+
+    async def delete_fact(
+        self,
+        user_id: str,
+        fact_id: str,
+    ) -> bool: ...
+
+    async def clear(
+        self,
+        user_id: str,
     ) -> None: ...

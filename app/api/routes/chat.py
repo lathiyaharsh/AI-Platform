@@ -20,6 +20,7 @@ async def chat(
     answer = await gateway.generate(
         prompt=request.message,
         session_id=session_id,
+        user_id=request.user_id,
     )
 
     return ChatResponse(

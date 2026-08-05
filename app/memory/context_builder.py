@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from app.memory.long_term import LongTermMemoryService
 from app.memory.service import MemoryService
 from app.prompts.manager import PromptManager
 
@@ -17,6 +18,21 @@ class PromptContext:
     documents: str
     user_input: str
 
+    @property
+    def is_personalized(self) -> bool:
+        """True when prompt depends on session/user-specific context."""
+        return bool(
+            self.history.strip()
+            or self.memory.strip()
+            or self.documents.strip()
+        )
+
+
+@dataclass(frozen=True)
+class BuiltPrompt:
+    text: str
+    personalized: bool
+
 
 class ContextBuilder:
     """
@@ -24,7 +40,7 @@ class ContextBuilder:
 
     Combines:
     - Conversation history (short-term memory)
-    - Long-term memory facts (optional, Phase 3)
+    - Long-term memory facts
     - Retrieved documents (optional, Phase 7 RAG)
     - Current user input
 
@@ -35,9 +51,11 @@ class ContextBuilder:
         self,
         memory: MemoryService,
         prompt_manager: PromptManager | None = None,
+        long_term: LongTermMemoryService | None = None,
     ) -> None:
         self.memory = memory
         self.prompt_manager = prompt_manager or PromptManager()
+        self.long_term = long_term
 
     async def build(
         self,
@@ -45,18 +63,20 @@ class ContextBuilder:
         session_id: str,
         user_input: str,
         prompt_name: str,
+        user_id: str | None = None,
         version: int | None = None,
         long_term_memory: list[str] | None = None,
         documents: list[str] | None = None,
-    ) -> str:
+    ) -> BuiltPrompt:
         context = await self.assemble(
             session_id=session_id,
             user_input=user_input,
+            user_id=user_id,
             long_term_memory=long_term_memory,
             documents=documents,
         )
 
-        return self.prompt_manager.render(
+        text = self.prompt_manager.render(
             prompt_name,
             version=version,
             history=context.history,
@@ -65,19 +85,31 @@ class ContextBuilder:
             input=context.user_input,
         )
 
+        return BuiltPrompt(
+            text=text,
+            personalized=context.is_personalized,
+        )
+
     async def assemble(
         self,
         *,
         session_id: str,
         user_input: str,
+        user_id: str | None = None,
         long_term_memory: list[str] | None = None,
         documents: list[str] | None = None,
     ) -> PromptContext:
         history = await self.memory.build_history_text(session_id)
 
+        facts = long_term_memory
+        if facts is None and self.long_term is not None:
+            facts = await self.long_term.get_fact_texts(
+                user_id or session_id,
+            )
+
         return PromptContext(
             history=history,
-            memory=self._format_memory(long_term_memory),
+            memory=self._format_memory(facts),
             documents=self._format_documents(documents),
             user_input=user_input,
         )

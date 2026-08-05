@@ -63,6 +63,7 @@ class Settings(BaseSettings):
     # ==========================
 
     memory_window: int = 10
+    long_term_memory_max_facts: int = 20
 
     model_config = SettingsConfigDict(
         env_file=".env",
