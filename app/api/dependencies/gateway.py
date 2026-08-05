@@ -4,6 +4,7 @@ from app.embeddings.service import EmbeddingService
 from app.gateway.gateway import Gateway
 from app.memory.long_term import LongTermMemoryService
 from app.memory.service import MemoryService
+from app.observability.service import ObservabilityService
 from app.rag.service import RAGService, create_vector_store
 from app.tools.service import ToolService
 
@@ -51,10 +52,22 @@ def get_tool_service() -> ToolService:
 
 
 @lru_cache
+def get_observability_service() -> ObservabilityService:
+    """
+    Shared ObservabilityService for DI.
+
+    Exporters (OTel, Prometheus, Langfuse, …) can be registered on
+    this singleton without Gateway changes.
+    """
+    return ObservabilityService()
+
+
+@lru_cache
 def get_gateway() -> Gateway:
     return Gateway(
         memory=get_memory_service(),
         long_term=get_long_term_memory(),
         tools=get_tool_service(),
         rag=get_rag_service(),
+        observability=get_observability_service(),
     )

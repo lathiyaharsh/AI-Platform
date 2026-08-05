@@ -140,10 +140,16 @@ app/
 │       └── markdown_loader.py
 │
 ├── observability/
-│   ├── logger.py
+│   ├── __init__.py
+│   ├── service.py
+│   ├── models.py
+│   ├── types.py
 │   ├── metrics.py
-│   ├── tracing.py
-│   └── cost.py
+│   ├── events.py
+│   ├── logger.py
+│   ├── collector.py
+│   ├── cost.py
+│   └── tracing.py
 │
 ├── background/
 │   ├── jobs.py
@@ -284,15 +290,28 @@ Features:
 
 ## ✅ Observability
 
-Tracks:
+`ObservabilityService` (injected into Gateway) traces every AI request:
 
-- Latency
-- Token usage
-- Cost
-- Cache hits
-- Retries
-- Errors
-- Provider performance
+- Request ID on every structured JSON log line
+- Latency, provider, model, route, prompt version
+- Token usage (provider usage when available, else estimated)
+- CostEstimator (Groq / Gemini; pricing table is hot-updatable)
+- Exact / semantic cache hit rates
+- Router, memory, RAG, tool, and reflection metrics
+- Retries, fallbacks, errors
+
+Pluggable `MetricsCollector` exporters — register OpenTelemetry, Prometheus,
+Langfuse, Helicone, Phoenix, or W&B later without Gateway changes.
+
+Config:
+
+```text
+OBSERVABILITY_ENABLED=true
+ESTIMATE_COST=true
+LOG_REQUEST_BODY=false
+LOG_RESPONSE_BODY=false
+ENABLE_JSON_LOGGING=true
+```
 
 ---
 
@@ -478,7 +497,7 @@ LOG_LEVEL=INFO
 
 # 🚧 Roadmap
 
-> **Current progress:** Phases 1–7 core path is live (`POST /chat` / `POST /chat/rag` → router → long-term memory → RAG retrieve → context builder → versioned prompts → exact/semantic cache → tool loop → Groq/Gemini with retry/fallback → reflection → in-memory conversation memory + document catalog). Persistence (Postgres/Redis), agents, and deployment are still ahead.
+> **Current progress:** Phases 1–8 core path is live (`POST /chat` / `POST /chat/rag` → router → long-term memory → RAG retrieve → context builder → versioned prompts → exact/semantic cache → tool loop → Groq/Gemini with retry/fallback → reflection → in-memory conversation memory + document catalog → ObservabilityService request summary). Persistence (Postgres/Redis), agents, and deployment are still ahead.
 
 ## Phase 1 — Production AI Gateway
 
@@ -540,39 +559,12 @@ LOG_LEVEL=INFO
 
 ## Phase 8 — Observability
 
-- [x] Logging (loguru + request middleware)
-- [ ] Metrics
-- [ ] Cost Tracking
-- [ ] Tracing
-
----
-
-## Phase 9 — LLMOps
-
-- [ ] Prompt Evaluation
-- [ ] Prompt Testing
-- [ ] Hallucination Detection
-- [ ] A/B Testing
-- [ ] Golden Dataset
-
----
-
-## Phase 10 — AI Safety
-
-- [ ] Prompt Injection Detection
-- [ ] Output Validation
-- [ ] PII Detection
-- [ ] Guardrails
-
----
-
-## Phase 11 — Production Deployment
-
-- [ ] Redis (replace in-memory cache / memory backends)
-- [ ] Docker
-- [ ] Kubernetes
-- [ ] CI/CD
-- [ ] Monitoring
+- [x] ObservabilityService (request lifecycle + summary)
+- [x] Structured JSON logging (request_id bound)
+- [x] Metrics (latency, cache, tools, RAG, reflection, memory, router)
+- [x] Token usage + CostEstimator (Groq / Gemini)
+- [x] Pluggable collector (OTel / Prometheus / Langfuse / Helicone / Phoenix ready)
+- [x] Tracing bridge (exporter hooks without Gateway changes)
 
 ---
 

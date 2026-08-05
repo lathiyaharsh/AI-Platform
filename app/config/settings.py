@@ -96,6 +96,16 @@ class Settings(BaseSettings):
     chunk_strategy: str = "sentence"
     vector_store: str = "memory"
 
+    # ==========================
+    # Observability
+    # ==========================
+
+    observability_enabled: bool = True
+    estimate_cost: bool = True
+    log_request_body: bool = False
+    log_response_body: bool = False
+    enable_json_logging: bool = True
+
     model_config = SettingsConfigDict(
         env_file=".env",
         case_sensitive=False,
