@@ -11,11 +11,15 @@ from app.prompts.manager import PromptManager
 class PromptContext:
     """
     Normalized context sections ready for template rendering.
+
+    Order in the final prompt (via templates):
+    System → Memory → Retrieved Chunks → Tool Results → History → User
     """
 
     history: str
     memory: str
     documents: str
+    tool_results: str
     user_input: str
 
     @property
@@ -25,6 +29,7 @@ class PromptContext:
             self.history.strip()
             or self.memory.strip()
             or self.documents.strip()
+            or self.tool_results.strip()
         )
 
 
@@ -41,7 +46,8 @@ class ContextBuilder:
     Combines:
     - Conversation history (short-term memory)
     - Long-term memory facts
-    - Retrieved documents (optional, Phase 7 RAG)
+    - Retrieved document chunks (RAG)
+    - Tool execution results (optional)
     - Current user input
 
     Empty optional sections are omitted so prompts stay clean.
@@ -67,6 +73,7 @@ class ContextBuilder:
         version: int | None = None,
         long_term_memory: list[str] | None = None,
         documents: list[str] | None = None,
+        tool_results: list[str] | None = None,
     ) -> BuiltPrompt:
         context = await self.assemble(
             session_id=session_id,
@@ -74,6 +81,7 @@ class ContextBuilder:
             user_id=user_id,
             long_term_memory=long_term_memory,
             documents=documents,
+            tool_results=tool_results,
         )
 
         text = self.prompt_manager.render(
@@ -82,6 +90,7 @@ class ContextBuilder:
             history=context.history,
             memory=context.memory,
             documents=context.documents,
+            tool_results=context.tool_results,
             input=context.user_input,
         )
 
@@ -98,6 +107,7 @@ class ContextBuilder:
         user_id: str | None = None,
         long_term_memory: list[str] | None = None,
         documents: list[str] | None = None,
+        tool_results: list[str] | None = None,
     ) -> PromptContext:
         history = await self.memory.build_history_text(session_id)
 
@@ -111,6 +121,7 @@ class ContextBuilder:
             history=history,
             memory=self._format_memory(facts),
             documents=self._format_documents(documents),
+            tool_results=self._format_tool_results(tool_results),
             user_input=user_input,
         )
 
@@ -139,3 +150,18 @@ class ContextBuilder:
 
         body = "\n\n".join(blocks)
         return f"### Retrieved context\n{body}\n\n"
+
+    def _format_tool_results(self, tool_results: list[str] | None) -> str:
+        if not tool_results:
+            return ""
+
+        cleaned = [item.strip() for item in tool_results if item.strip()]
+        if not cleaned:
+            return ""
+
+        blocks: list[str] = []
+        for index, item in enumerate(cleaned, start=1):
+            blocks.append(f"[Tool result {index}]\n{item}")
+
+        body = "\n\n".join(blocks)
+        return f"### Tool results\n{body}\n\n"

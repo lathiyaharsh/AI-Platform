@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     semantic_cache: bool = True
     reflection_enabled: bool = True
     tools_enabled: bool = True
+    enable_rag: bool = True
 
     # ==========================
     # Reflection
@@ -81,6 +82,19 @@ class Settings(BaseSettings):
 
     memory_window: int = 10
     long_term_memory_max_facts: int = 20
+
+    # ==========================
+    # RAG
+    # ==========================
+
+    top_k: int = 5
+    # BGE cosine scores for related text often land ~0.55–0.75;
+    # 0.75 filtered real retrieval hits (e.g. school-name queries ~0.69).
+    min_similarity: float = 0.55
+    chunk_size: int = 512
+    chunk_overlap: int = 64
+    chunk_strategy: str = "sentence"
+    vector_store: str = "memory"
 
     model_config = SettingsConfigDict(
         env_file=".env",

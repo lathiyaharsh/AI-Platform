@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from app.cache.exact_cache import ExactCache
 from app.cache.semantic_cache import SemanticCache
-from app.config.constants import Provider
+from app.config.constants import Provider, RouteType
 from app.config.settings import settings
 from app.gateway.providers.exceptions import ProviderError
 from app.gateway.providers.gemini_provider import GeminiProvider
@@ -14,6 +14,7 @@ from app.memory.long_term import LongTermMemoryService
 from app.memory.service import MemoryService
 from app.observability.logger import app_logger
 from app.prompts.manager import PromptManager
+from app.rag.service import RAGService
 from app.reflection.service import ReflectionService
 from app.tools.service import ToolService
 
@@ -28,6 +29,7 @@ class Gateway:
     - Context building
     - Conversation memory
     - Long-term memory
+    - RAG orchestration (via RAGService)
     - Exact cache
     - Semantic cache
     - Retry
@@ -42,6 +44,7 @@ class Gateway:
         long_term: LongTermMemoryService | None = None,
         reflection: ReflectionService | None = None,
         tools: ToolService | None = None,
+        rag: RAGService | None = None,
     ) -> None:
 
         self.router = Router()
@@ -55,6 +58,8 @@ class Gateway:
         self.memory = memory or MemoryService()
 
         self.long_term = long_term or LongTermMemoryService()
+
+        self.rag = rag or RAGService()
 
         self.context_builder = ContextBuilder(
             memory=self.memory,
@@ -83,6 +88,10 @@ class Gateway:
         prompt: str,
         session_id: str | None = None,
         user_id: str | None = None,
+        *,
+        force_rag: bool = False,
+        top_k: int | None = None,
+        min_similarity: float | None = None,
     ) -> str:
 
         session_id = session_id or str(uuid4())
@@ -92,7 +101,11 @@ class Gateway:
         # 1. Intelligent Routing
         #
 
-        decision = self.router.route(prompt)
+        decision = self.router.route(
+            prompt,
+            force_rag=force_rag,
+            rag_available=self.rag.enabled and self.rag.has_documents,
+        )
 
         provider = self.providers[decision.provider]
 
@@ -103,19 +116,50 @@ class Gateway:
         await self.long_term.extract_and_store(user_id, prompt)
 
         #
-        # 3. Context Building (history + memory + docs + input)
+        # 3. RAG retrieval (Gateway only calls RAGService)
         #
 
+        documents: list[str] | None = None
+        if (
+            settings.enable_rag
+            and self.rag.enabled
+            and (
+                force_rag
+                or decision.route == RouteType.RAG
+            )
+        ):
+            retrieval = await self.rag.retrieve(
+                prompt,
+                top_k=top_k,
+                min_similarity=min_similarity,
+            )
+            if retrieval.success and retrieval.hits:
+                documents = self.rag.documents_for_context(retrieval)
+                app_logger.info(
+                    f"RAG context attached sources={len(documents)} "
+                    f"context_chars={retrieval.context_chars}"
+                )
+            elif not retrieval.success:
+                app_logger.warning(
+                    f"RAG retrieval skipped: {retrieval.error}"
+                )
+
+        #
+        # 4. Context Building (history + memory + docs + tools + input)
+        #
+
+        prompt_name = decision.route.value
         built = await self.context_builder.build(
             session_id=session_id,
             user_id=user_id,
             user_input=prompt,
-            prompt_name=decision.route.value,
+            prompt_name=prompt_name,
+            documents=documents,
         )
         final_prompt = built.text
 
         #
-        # 4. Exact Cache (keyed on full rendered prompt)
+        # 5. Exact Cache (keyed on full rendered prompt)
         #
 
         cached = self.exact_cache.get(final_prompt)
@@ -133,7 +177,7 @@ class Gateway:
             return cached
 
         #
-        # 5. Semantic Cache
+        # 6. Semantic Cache
         #    Skip when personalized — shared template/memory text causes
         #    false hits across different user questions in the same session.
         #
@@ -158,7 +202,7 @@ class Gateway:
                 return cached
 
         #
-        # 6. Retry (provider + tool loop)
+        # 7. Retry (provider + tool loop)
         #
 
         for attempt in range(settings.max_retries):
@@ -167,6 +211,7 @@ class Gateway:
 
                 app_logger.info(
                     f"Provider={decision.provider.value} "
+                    f"Route={decision.route.value} "
                     f"Attempt={attempt + 1}"
                 )
 
@@ -214,7 +259,7 @@ class Gateway:
                 await sleep(settings.retry_delay)
 
         #
-        # 7. Fallback
+        # 8. Fallback
         #
 
         app_logger.warning(

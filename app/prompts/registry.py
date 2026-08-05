@@ -8,6 +8,7 @@ PROMPTS = (
     "chat",
     "code",
     "summarize",
+    "rag",
 )
 
 versions = PromptVersionStore(PROMPT_DIR)

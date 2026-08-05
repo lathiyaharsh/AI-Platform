@@ -1,5 +1,6 @@
 {
   "chat": 1,
   "code": 1,
-  "summarize": 1
+  "summarize": 1,
+  "rag": 1
 }

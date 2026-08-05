@@ -48,41 +48,19 @@ Every new concept I learn will be integrated into this project.
 
                      AI Gateway
 
-        ┌──────────────┬──────────────┐
+                          │
 
-        ▼              ▼              ▼
+        Router → Memory → RAG → Context Builder → Prompt Manager
 
-     Router      Prompt Manager    Memory
+                          │
 
-        │              │              │
+                   Tool Executor → LLM Providers
 
-        └──────────────┼──────────────┘
+                          │
 
-                       ▼
+                      Reflection → Cache → Response
 
-                Context Builder
-
-                       ▼
-
-               Reflection Engine
-
-                       ▼
-
-                Tool Executor
-
-                       ▼
-
-                 RAG / Retrieval
-
-                       ▼
-
-                LLM Providers
-
-        ┌─────────┬─────────┬─────────┐
-
-        ▼         ▼         ▼
-
-      Groq      Gemini    Future...
+        Providers: Groq · Gemini · Future...
 ```
 
 ---
@@ -144,10 +122,22 @@ app/
 │       └── uuid_generator.py
 │
 ├── rag/
-│   ├── ingestion.py
-│   ├── indexing.py
-│   ├── retrieval.py
-│   └── chunking.py
+│   ├── __init__.py
+│   ├── service.py
+│   ├── models.py
+│   ├── types.py
+│   ├── constants.py
+│   ├── pipeline.py
+│   ├── chunking.py
+│   ├── retriever.py
+│   ├── reranker.py
+│   ├── context.py
+│   ├── storage.py
+│   └── loaders/
+│       ├── base.py
+│       ├── pdf_loader.py
+│       ├── text_loader.py
+│       └── markdown_loader.py
 │
 ├── observability/
 │   ├── logger.py
@@ -488,7 +478,7 @@ LOG_LEVEL=INFO
 
 # 🚧 Roadmap
 
-> **Current progress:** Phases 1–6 core path is live (`POST /chat` → router → long-term memory → context builder → versioned prompts → exact/semantic cache → tool loop (plan → execute → synthesize) → Groq/Gemini with retry/fallback → reflection / auto-improve → in-memory conversation memory). Persistence (Postgres/Redis), RAG, agents, and deployment are still ahead.
+> **Current progress:** Phases 1–7 core path is live (`POST /chat` / `POST /chat/rag` → router → long-term memory → RAG retrieve → context builder → versioned prompts → exact/semantic cache → tool loop → Groq/Gemini with retry/fallback → reflection → in-memory conversation memory + document catalog). Persistence (Postgres/Redis), agents, and deployment are still ahead.
 
 ## Phase 1 — Production AI Gateway
 
@@ -541,9 +531,10 @@ LOG_LEVEL=INFO
 
 ## Phase 7 — RAG
 
-- [ ] Document Pipeline
-- [ ] Retrieval
-- [ ] Vector Search
+- [x] Document Pipeline (txt / md / pdf → clean → chunk → embed → store)
+- [x] Retrieval (EmbeddingService + VectorStore + Reranker)
+- [x] Vector Search (MemoryVectorStore + cosine similarity)
+- [x] Context attribution + Gateway / Router / API integration
 
 ---
 

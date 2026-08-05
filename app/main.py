@@ -1,14 +1,15 @@
 from fastapi import FastAPI
 
 from app.api.middleware.logging import LoggingMiddleware
+from app.api.routes import chat, rag
 from app.config.settings import settings
-from app.api.routes import chat
 
 app = FastAPI(title=settings.app_name)
 
 app.add_middleware(LoggingMiddleware)
 
 app.include_router(chat.router)
+app.include_router(rag.router)
 
 
 @app.get("/")

@@ -4,4 +4,4 @@ Write clean, production-ready code.
 
 Explain your reasoning briefly.
 
-{{memory}}{{documents}}{{history}}User: {{input}}
+{{memory}}{{documents}}{{tool_results}}{{history}}User: {{input}}
