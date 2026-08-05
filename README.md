@@ -129,9 +129,19 @@ app/
 │   └── types.py
 │
 ├── tools/
+│   ├── __init__.py
+│   ├── base.py
+│   ├── types.py
+│   ├── models.py
 │   ├── registry.py
 │   ├── executor.py
-│   └── implementations/
+│   ├── service.py
+│   ├── prompts.py
+│   └── providers/
+│       ├── weather.py
+│       ├── calculator.py
+│       ├── datetime.py
+│       └── uuid_generator.py
 │
 ├── rag/
 │   ├── ingestion.py
@@ -259,10 +269,14 @@ Allows the AI to:
 Supports:
 
 - Tool registry
-- Tool execution
+- Tool executor
+- Tool service (Gateway-facing API)
+- JSON schemas for LLM function calling
+- Multi-tool / multi-round tool loop
 - Validation
 - Parallel execution
 - Timeouts
+- Built-in tools: weather, calculator, datetime, uuid_generator
 
 ---
 
@@ -366,6 +380,12 @@ REFLECTION_MODEL=llama-3.3-70b-versatile
 REFLECTION_THRESHOLD=0.7
 MAX_REFLECTIONS=1
 
+TOOLS_ENABLED=true
+TOOLS_PROVIDER=groq
+TOOLS_MODEL=llama-3.3-70b-versatile
+TOOL_TIMEOUT_SECONDS=15
+MAX_TOOL_ITERATIONS=3
+
 LOG_LEVEL=INFO
 ```
 
@@ -468,7 +488,7 @@ LOG_LEVEL=INFO
 
 # 🚧 Roadmap
 
-> **Current progress:** Phases 1–5 core path is live (`POST /chat` → router → long-term memory → context builder → versioned prompts → exact/semantic cache → Groq/Gemini with retry/fallback → reflection / auto-improve → in-memory conversation memory). Persistence (Postgres/Redis), RAG, agents, tools, and deployment are still ahead.
+> **Current progress:** Phases 1–6 core path is live (`POST /chat` → router → long-term memory → context builder → versioned prompts → exact/semantic cache → tool loop (plan → execute → synthesize) → Groq/Gemini with retry/fallback → reflection / auto-improve → in-memory conversation memory). Persistence (Postgres/Redis), RAG, agents, and deployment are still ahead.
 
 ## Phase 1 — Production AI Gateway
 
@@ -512,8 +532,10 @@ LOG_LEVEL=INFO
 
 ## Phase 6 — Tool Execution
 
-- [ ] Tool Registry
-- [ ] Tool Executor
+- [x] Tool Registry
+- [x] Tool Executor
+- [x] Tool Service + multi-round tool loop
+- [x] Sample tools (weather, calculator, datetime, uuid)
 
 ---
 

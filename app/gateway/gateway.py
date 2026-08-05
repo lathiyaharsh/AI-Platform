@@ -15,6 +15,7 @@ from app.memory.service import MemoryService
 from app.observability.logger import app_logger
 from app.prompts.manager import PromptManager
 from app.reflection.service import ReflectionService
+from app.tools.service import ToolService
 
 
 class Gateway:
@@ -31,6 +32,7 @@ class Gateway:
     - Semantic cache
     - Retry
     - Fallback
+    - Tool execution orchestration
     - Reflection orchestration
     """
 
@@ -39,6 +41,7 @@ class Gateway:
         memory: MemoryService | None = None,
         long_term: LongTermMemoryService | None = None,
         reflection: ReflectionService | None = None,
+        tools: ToolService | None = None,
     ) -> None:
 
         self.router = Router()
@@ -67,6 +70,13 @@ class Gateway:
         self.reflection = reflection or ReflectionService(
             providers=self.providers,
         )
+
+        self.tools = tools or ToolService(
+            providers=self.providers,
+        )
+        # Shared DI instances may be constructed before providers exist.
+        if self.tools.providers is None:
+            self.tools.providers = self.providers
 
     async def generate(
         self,
@@ -148,7 +158,7 @@ class Gateway:
                 return cached
 
         #
-        # 6. Retry
+        # 6. Retry (provider + tool loop)
         #
 
         for attempt in range(settings.max_retries):
@@ -160,9 +170,13 @@ class Gateway:
                     f"Attempt={attempt + 1}"
                 )
 
-                response = await provider.generate(
-                    prompt=final_prompt,
+                tool_result = await self.tools.run(
+                    question=prompt,
+                    context_prompt=final_prompt,
+                    caller=provider,
                 )
+                response = tool_result.final_response
+                used_tools = tool_result.used_tools
 
                 response = await self._finalize_response(
                     question=prompt,
@@ -175,16 +189,18 @@ class Gateway:
                     response=response,
                 )
 
-                self.exact_cache.set(
-                    final_prompt,
-                    response,
-                )
-
-                if not built.personalized:
-                    await self.semantic_cache.set(
+                # Do not cache live tool answers (weather, datetime, …).
+                if not used_tools:
+                    self.exact_cache.set(
                         final_prompt,
                         response,
                     )
+
+                    if not built.personalized:
+                        await self.semantic_cache.set(
+                            final_prompt,
+                            response,
+                        )
 
                 return response
 
@@ -207,9 +223,13 @@ class Gateway:
 
         fallback = self.providers[Provider.GEMINI]
 
-        response = await fallback.generate(
-            prompt=final_prompt,
+        tool_result = await self.tools.run(
+            question=prompt,
+            context_prompt=final_prompt,
+            caller=fallback,
         )
+        response = tool_result.final_response
+        used_tools = tool_result.used_tools
 
         response = await self._finalize_response(
             question=prompt,
@@ -222,16 +242,17 @@ class Gateway:
             response=response,
         )
 
-        self.exact_cache.set(
-            final_prompt,
-            response,
-        )
-
-        if not built.personalized:
-            await self.semantic_cache.set(
+        if not used_tools:
+            self.exact_cache.set(
                 final_prompt,
                 response,
             )
+
+            if not built.personalized:
+                await self.semantic_cache.set(
+                    final_prompt,
+                    response,
+                )
 
         return response
 

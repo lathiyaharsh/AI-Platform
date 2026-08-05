@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     cache_enabled: bool = True
     semantic_cache: bool = True
     reflection_enabled: bool = True
+    tools_enabled: bool = True
 
     # ==========================
     # Reflection
@@ -49,6 +50,14 @@ class Settings(BaseSettings):
     reflection_model: str = "llama-3.3-70b-versatile"
     reflection_threshold: float = 0.7
     max_reflections: int = 1
+
+    # ==========================
+    # Tools
+    # ==========================
+    tools_provider: str = "groq"
+    tools_model: str = "llama-3.3-70b-versatile"
+    tool_timeout_seconds: float = 15.0
+    max_tool_iterations: int = 3
 
     # ==========================
     # Retry
