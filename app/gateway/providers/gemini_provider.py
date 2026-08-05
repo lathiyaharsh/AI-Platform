@@ -4,6 +4,8 @@ from app.config.settings import settings
 from app.gateway.providers.base import BaseProvider
 from app.gateway.providers.exceptions import ProviderError
 
+_DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
+
 
 class GeminiProvider(BaseProvider):
     def __init__(self):
@@ -13,6 +15,7 @@ class GeminiProvider(BaseProvider):
         self,
         prompt: str,
         system_prompt: str | None = None,
+        model: str | None = None,
     ) -> str:
 
         full_prompt = prompt
@@ -22,7 +25,7 @@ class GeminiProvider(BaseProvider):
 
         try:
             response = self.client.models.generate_content(
-                model="gemini-2.5-flash",
+                model=model or _DEFAULT_GEMINI_MODEL,
                 contents=full_prompt,
             )
 

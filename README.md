@@ -122,9 +122,11 @@ app/
 │   └── context_builder.py
 │
 ├── reflection/
-│   ├── engine.py
-│   ├── evaluator.py
-│   └── prompts.py
+│   ├── __init__.py
+│   ├── models.py
+│   ├── service.py
+│   ├── prompts.py
+│   └── types.py
 │
 ├── tools/
 │   ├── registry.py
@@ -357,7 +359,12 @@ DEFAULT_MODEL=llama-3.3-70b-versatile
 
 CACHE_ENABLED=true
 SEMANTIC_CACHE=true
+
 REFLECTION_ENABLED=true
+REFLECTION_PROVIDER=groq
+REFLECTION_MODEL=llama-3.3-70b-versatile
+REFLECTION_THRESHOLD=0.7
+MAX_REFLECTIONS=1
 
 LOG_LEVEL=INFO
 ```
@@ -461,7 +468,7 @@ LOG_LEVEL=INFO
 
 # 🚧 Roadmap
 
-> **Current progress:** Phases 1–4 core path is live (`POST /chat` → router → long-term memory → context builder → versioned prompts → exact/semantic cache → Groq/Gemini with retry/fallback → in-memory conversation memory). Persistence (Postgres/Redis), RAG, agents, reflection, tools, and deployment are still ahead.
+> **Current progress:** Phases 1–5 core path is live (`POST /chat` → router → long-term memory → context builder → versioned prompts → exact/semantic cache → Groq/Gemini with retry/fallback → reflection / auto-improve → in-memory conversation memory). Persistence (Postgres/Redis), RAG, agents, tools, and deployment are still ahead.
 
 ## Phase 1 — Production AI Gateway
 
@@ -498,8 +505,8 @@ LOG_LEVEL=INFO
 
 ## Phase 5 — Reflection
 
-- [ ] Reflection Engine
-- [ ] Auto Improvement
+- [x] Reflection Engine
+- [x] Auto Improvement
 
 ---
 

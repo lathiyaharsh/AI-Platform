@@ -43,6 +43,14 @@ class Settings(BaseSettings):
     reflection_enabled: bool = True
 
     # ==========================
+    # Reflection
+    # ==========================
+    reflection_provider: str = "groq"
+    reflection_model: str = "llama-3.3-70b-versatile"
+    reflection_threshold: float = 0.7
+    max_reflections: int = 1
+
+    # ==========================
     # Retry
     # ==========================
 

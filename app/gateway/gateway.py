@@ -14,6 +14,7 @@ from app.memory.long_term import LongTermMemoryService
 from app.memory.service import MemoryService
 from app.observability.logger import app_logger
 from app.prompts.manager import PromptManager
+from app.reflection.service import ReflectionService
 
 
 class Gateway:
@@ -30,12 +31,14 @@ class Gateway:
     - Semantic cache
     - Retry
     - Fallback
+    - Reflection orchestration
     """
 
     def __init__(
         self,
         memory: MemoryService | None = None,
         long_term: LongTermMemoryService | None = None,
+        reflection: ReflectionService | None = None,
     ) -> None:
 
         self.router = Router()
@@ -60,6 +63,10 @@ class Gateway:
             Provider.GROQ: GroqProvider(),
             Provider.GEMINI: GeminiProvider(),
         }
+
+        self.reflection = reflection or ReflectionService(
+            providers=self.providers,
+        )
 
     async def generate(
         self,
@@ -157,6 +164,11 @@ class Gateway:
                     prompt=final_prompt,
                 )
 
+                response = await self._finalize_response(
+                    question=prompt,
+                    response=response,
+                )
+
                 await self._persist_turn(
                     session_id=session_id,
                     prompt=prompt,
@@ -199,6 +211,11 @@ class Gateway:
             prompt=final_prompt,
         )
 
+        response = await self._finalize_response(
+            question=prompt,
+            response=response,
+        )
+
         await self._persist_turn(
             session_id=session_id,
             prompt=prompt,
@@ -217,6 +234,20 @@ class Gateway:
             )
 
         return response
+
+    async def _finalize_response(
+        self,
+        question: str,
+        response: str,
+    ) -> str:
+        """
+        Run reflection after generation; Gateway only orchestrates.
+        """
+        result = await self.reflection.reflect(
+            question=question,
+            answer=response,
+        )
+        return result.final_response
 
     async def _persist_turn(
         self,

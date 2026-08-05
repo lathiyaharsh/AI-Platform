@@ -13,6 +13,7 @@ class GroqProvider(BaseProvider):
         self,
         prompt: str,
         system_prompt: str | None = None,
+        model: str | None = None,
     ) -> str:
 
         messages = []
@@ -34,7 +35,7 @@ class GroqProvider(BaseProvider):
 
         try:
             response = await self.client.chat.completions.create(
-                model=settings.default_model,
+                model=model or settings.default_model,
                 messages=messages,
             )
 

@@ -9,6 +9,7 @@ class BaseProvider(ABC):
         self,
         prompt: str,
         system_prompt: str | None = None,
+        model: str | None = None,
     ) -> str:
         """Generate a response from the LLM."""
         pass
