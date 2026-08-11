@@ -363,6 +363,16 @@ Used for:
 # 🔐 Environment Variables
 
 ```env
+# App
+
+APP_NAME=Production AI Platform
+APP_ENV=development
+
+HOST=0.0.0.0
+PORT=8000
+
+LOG_LEVEL=INFO
+
 # Providers
 
 GROQ_API_KEY=
@@ -395,7 +405,23 @@ TOOLS_MODEL=llama-3.3-70b-versatile
 TOOL_TIMEOUT_SECONDS=15
 MAX_TOOL_ITERATIONS=3
 
-LOG_LEVEL=INFO
+# RAG
+
+ENABLE_RAG=true
+TOP_K=5
+MIN_SIMILARITY=0.55
+CHUNK_SIZE=512
+CHUNK_OVERLAP=64
+CHUNK_STRATEGY=sentence
+VECTOR_STORE=memory
+
+# Observability
+
+OBSERVABILITY_ENABLED=true
+ESTIMATE_COST=true
+LOG_REQUEST_BODY=false
+LOG_RESPONSE_BODY=false
+ENABLE_JSON_LOGGING=true
 ```
 
 ---
