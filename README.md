@@ -368,8 +368,9 @@ Used for:
 APP_NAME=Production AI Platform
 APP_ENV=development
 
-HOST=0.0.0.0
-PORT=8000
+# Local only — do NOT set on FastAPI Cloud (PORT/HOST are reserved / invalid there).
+# HOST=0.0.0.0
+# PORT=8000
 
 LOG_LEVEL=INFO
 
