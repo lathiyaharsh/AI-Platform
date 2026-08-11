@@ -110,7 +110,7 @@ class DocumentPipeline:
                     upload_ms=(time.perf_counter() - started) * 1000,
                 )
 
-            if replace and document_id in self._catalog:
+            if replace:
                 await self.store.delete(document_id)
 
             embed_started = time.perf_counter()
@@ -193,12 +193,11 @@ class DocumentPipeline:
             )
 
     async def delete(self, document_id: str) -> bool:
-        if document_id not in self._catalog:
-            return False
-        await self.store.delete(document_id)
+        removed = await self.store.delete(document_id)
+        in_catalog = document_id in self._catalog
         self._catalog.pop(document_id, None)
         self._raw_content.pop(document_id, None)
-        return True
+        return removed > 0 or in_catalog
 
     async def reindex(
         self,

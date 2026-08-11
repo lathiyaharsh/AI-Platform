@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     # Database
     # ==========================
     supabase_db_url: str = ""
+    supabase_collection: str = "ai_chat_docs"
 
     # ==========================
     # AI
@@ -94,7 +95,7 @@ class Settings(BaseSettings):
     chunk_size: int = 512
     chunk_overlap: int = 64
     chunk_strategy: str = "sentence"
-    vector_store: str = "memory"
+    vector_store: str = "pgvector"
 
     # ==========================
     # Observability

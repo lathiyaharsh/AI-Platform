@@ -30,8 +30,8 @@ class VectorStoreBackend(str, Enum):
     """
     Vector store backends.
 
-    Only MEMORY is implemented now; other values reserve the
-    settings contract for pgvector, Qdrant, Pinecone, etc.
+    Only MEMORY and PGVECTOR are implemented now; other values reserve the
+    settings contract for Qdrant, Pinecone, etc.
     """
 
     MEMORY = "memory"
@@ -61,8 +61,8 @@ class VectorStore(Protocol):
     """
     Vector storage contract.
 
-    Implementations: MemoryVectorStore now;
-    Supabase pgvector / Qdrant / Pinecone / Weaviate / Milvus / FAISS later
+    Implementations: MemoryVectorStore, PgVectorStore;
+    Qdrant / Pinecone / Weaviate / Milvus / FAISS later
     without changing RAGService or Retriever.
     """
 

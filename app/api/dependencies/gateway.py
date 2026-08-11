@@ -30,7 +30,7 @@ def get_rag_service() -> RAGService:
     Shared RAGService for DI.
 
     Embeddings and vector store are created once so upload + chat
-    share the same in-memory catalog and vectors.
+    share the same catalog and vectors (memory or pgvector).
     """
     embeddings = get_embedding_service()
     store = create_vector_store()

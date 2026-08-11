@@ -1,6 +1,5 @@
-def main():
-    print("Hello from backend!")
+"""Re-export the FastAPI app so auto-detect of `main.py` works on FastAPI Cloud."""
 
+from app.main import app
 
-if __name__ == "__main__":
-    main()
+__all__ = ["app"]

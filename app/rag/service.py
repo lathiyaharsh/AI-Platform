@@ -16,6 +16,7 @@ from app.rag.models import (
 from app.rag.pipeline import DocumentPipeline
 from app.rag.reranker import SimilarityReranker
 from app.rag.retriever import Retriever
+from app.rag.pgvector_store import PgVectorStore
 from app.rag.storage import MemoryVectorStore
 from app.rag.types import (
     RagErrorCode,
@@ -31,7 +32,7 @@ def create_vector_store(
     """
     Factory for vector backends.
 
-    Only MEMORY is implemented; other backends raise clearly so
+    Supported: memory, pgvector. Other backends raise clearly so
     settings stay future-ready without silent misconfiguration.
     """
     value = backend or settings.vector_store
@@ -40,10 +41,12 @@ def create_vector_store(
 
     if value == VectorStoreBackend.MEMORY:
         return MemoryVectorStore()
+    if value == VectorStoreBackend.PGVECTOR:
+        return PgVectorStore()
 
     raise ValueError(
         f"Vector store backend '{value.value}' is not implemented yet. "
-        "Use VECTOR_STORE=memory."
+        "Use VECTOR_STORE=memory or VECTOR_STORE=pgvector."
     )
 
 
@@ -156,10 +159,24 @@ class RAGService:
         return self.context_builder.build_list(result.hits)
 
     async def list_documents(self) -> list[DocumentMeta]:
-        return self.pipeline.list_documents()
+        catalog = self.pipeline.list_documents()
+        if catalog:
+            return catalog
+        list_fn = getattr(self.store, "list_documents", None)
+        if callable(list_fn):
+            return await list_fn()
+        return catalog
 
     async def get_document(self, document_id: str) -> DocumentMeta | None:
-        return self.pipeline.get_document(document_id)
+        found = self.pipeline.get_document(document_id)
+        if found is not None:
+            return found
+        list_fn = getattr(self.store, "list_documents", None)
+        if callable(list_fn):
+            for meta in await list_fn():
+                if meta.document_id == document_id:
+                    return meta
+        return None
 
     async def delete_document(self, document_id: str) -> bool:
         if not self.enabled:
@@ -195,4 +212,6 @@ class RAGService:
 
     @property
     def has_documents(self) -> bool:
-        return len(self.pipeline.catalog) > 0
+        if len(self.pipeline.catalog) > 0:
+            return True
+        return int(getattr(self.store, "size", 0) or 0) > 0

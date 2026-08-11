@@ -386,6 +386,10 @@ HUGGINGFACE_API_KEY=
 
 SUPABASE_DB_URL=
 
+SUPABASE_COLLECTION=ai_chat_docs
+
+HF_EMBED_DIM=384
+
 # Default Settings
 
 DEFAULT_PROVIDER=groq
@@ -414,7 +418,7 @@ MIN_SIMILARITY=0.55
 CHUNK_SIZE=512
 CHUNK_OVERLAP=64
 CHUNK_STRATEGY=sentence
-VECTOR_STORE=memory
+VECTOR_STORE=pgvector
 
 # Observability
 
@@ -524,7 +528,7 @@ ENABLE_JSON_LOGGING=true
 
 # 🚧 Roadmap
 
-> **Current progress:** Phases 1–8 core path is live (`POST /chat` / `POST /chat/rag` → router → long-term memory → RAG retrieve → context builder → versioned prompts → exact/semantic cache → tool loop → Groq/Gemini with retry/fallback → reflection → in-memory conversation memory + document catalog → ObservabilityService request summary). Persistence (Postgres/Redis), agents, and deployment are still ahead.
+> **Current progress:** Phases 1–8 core path is live (`POST /chat` / `POST /chat/rag` → router → long-term memory → RAG retrieve → context builder → versioned prompts → exact/semantic cache → tool loop → Groq/Gemini with retry/fallback → reflection → conversation memory + document catalog → ObservabilityService request summary). Vector persistence uses Supabase Postgres + pgvector (`VECTOR_STORE=pgvector`); Redis and multi-agent work are still ahead.
 
 ## Phase 1 — Production AI Gateway
 
@@ -579,7 +583,7 @@ ENABLE_JSON_LOGGING=true
 
 - [x] Document Pipeline (txt / md / pdf → clean → chunk → embed → store)
 - [x] Retrieval (EmbeddingService + VectorStore + Reranker)
-- [x] Vector Search (MemoryVectorStore + cosine similarity)
+- [x] Vector Search (MemoryVectorStore + PgVectorStore / cosine similarity)
 - [x] Context attribution + Gateway / Router / API integration
 
 ---
