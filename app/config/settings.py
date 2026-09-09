@@ -90,9 +90,9 @@ class Settings(BaseSettings):
     # ==========================
 
     top_k: int = 5
-    # BGE cosine scores for related text often land ~0.55–0.75;
-    # 0.75 filtered real retrieval hits (e.g. school-name queries ~0.69).
-    min_similarity: float = 0.55
+    # BGE cosine for short/typo queries often lands ~0.40–0.55;
+    # 0.55 filtered real hits (e.g. "shcool name" → best ~0.49).
+    min_similarity: float = 0.40
     chunk_size: int = 512
     chunk_overlap: int = 64
     chunk_strategy: str = "sentence"

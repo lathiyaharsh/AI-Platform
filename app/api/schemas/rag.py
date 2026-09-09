@@ -57,7 +57,7 @@ class RagChatRequest(BaseModel):
     RAG chat body.
 
     Leave top_k / min_similarity empty to use server settings
-    (TOP_K=5, MIN_SIMILARITY=0.55). Do not set min_similarity=1.0 —
+    (TOP_K=5, MIN_SIMILARITY=0.40). Do not set min_similarity=1.0 —
     that requires a perfect vector match and almost always returns
     zero hits (Swagger often pre-fills 1.0; those values are ignored).
     """
@@ -84,7 +84,7 @@ class RagChatRequest(BaseModel):
         default=None,
         ge=0.0,
         le=1.0,
-        examples=[0.55],
+        examples=[0.40],
         description=(
             "Optional cosine threshold. Omit to use MIN_SIMILARITY from settings. "
             "Values >= 0.99 (including Swagger's default 1.0) fall back to settings."
@@ -118,7 +118,7 @@ class RagChatRequest(BaseModel):
                 {
                     "message": "what is the school name?",
                     "top_k": 5,
-                    "min_similarity": 0.55,
+                    "min_similarity": 0.40,
                 }
             ]
         }

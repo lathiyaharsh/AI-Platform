@@ -73,12 +73,29 @@ class Retriever:
                 filters=filters,
             )
 
+            # Soft fallback: short / typo queries often score just under
+            # the hard threshold; still return the nearest chunks if close.
             if not hits:
-                await self._log_empty_retrieval(
-                    query_embedding=query_embedding,
-                    threshold=threshold,
+                soft_floor = max(0.35, threshold - 0.15)
+                probe = await self.store.search(
+                    query_embedding,
+                    top_k=candidate_k,
+                    min_similarity=soft_floor,
                     filters=filters,
                 )
+                if probe:
+                    app_logger.warning(
+                        f"RAG retrieve soft-fallback "
+                        f"threshold={threshold} soft_floor={soft_floor} "
+                        f"best_score={probe[0].score:.4f} hits={len(probe)}"
+                    )
+                    hits = probe
+                else:
+                    await self._log_empty_retrieval(
+                        query_embedding=query_embedding,
+                        threshold=threshold,
+                        filters=filters,
+                    )
 
             ranked = await self.reranker.rerank(query, hits, top_k=k)
             retrieval_ms = (time.perf_counter() - started) * 1000
