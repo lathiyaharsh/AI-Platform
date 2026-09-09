@@ -47,7 +47,7 @@ class Router:
             return Decision(
                 provider=Provider.GROQ,
                 route=RouteType.RAG,
-                model="llama-3.3-70b-versatile",
+                model=settings.default_model,
             )
 
         text = prompt.lower()
@@ -65,7 +65,7 @@ class Router:
             return Decision(
                 provider=Provider.GROQ,
                 route=RouteType.CODE,
-                model="llama-3.3-70b-versatile",
+                model=settings.default_model,
             )
 
         if any(word in text for word in [
@@ -81,7 +81,7 @@ class Router:
         return Decision(
             provider=Provider.GROQ,
             route=RouteType.CHAT,
-            model="llama-3.3-70b-versatile",
+            model=settings.default_model,
         )
 
     def _is_rag(self, prompt: str) -> bool:

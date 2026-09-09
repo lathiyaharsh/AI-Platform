@@ -10,6 +10,14 @@ from app.observability.models import CostEstimate, TokenUsage
 # touching Gateway / business logic.
 DEFAULT_PRICING: dict[str, dict[str, dict[str, float]]] = {
     "groq": {
+        "openai/gpt-oss-120b": {
+            "input": 0.15,
+            "output": 0.60,
+        },
+        "openai/gpt-oss-20b": {
+            "input": 0.10,
+            "output": 0.50,
+        },
         "llama-3.3-70b-versatile": {
             "input": 0.59,
             "output": 0.79,
@@ -19,8 +27,8 @@ DEFAULT_PRICING: dict[str, dict[str, dict[str, float]]] = {
             "output": 0.08,
         },
         "default": {
-            "input": 0.59,
-            "output": 0.79,
+            "input": 0.15,
+            "output": 0.60,
         },
     },
     "gemini": {

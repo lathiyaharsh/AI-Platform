@@ -309,6 +309,7 @@ class Gateway:
                         question=prompt,
                         context_prompt=final_prompt,
                         caller=provider,
+                        model=decision.model,
                     )
                     response = tool_result.final_response
                     used_tools = tool_result.used_tools
@@ -373,16 +374,18 @@ class Gateway:
             )
 
             fallback = self.providers[Provider.GEMINI]
+            fallback_model = "gemini-2.5-flash"
             await self.obs.record_fallback(
                 request_id,
                 provider=Provider.GEMINI.value,
-                model="gemini-2.5-flash",
+                model=fallback_model,
             )
 
             tool_result = await self.tools.run(
                 question=prompt,
                 context_prompt=final_prompt,
                 caller=fallback,
+                model=fallback_model,
             )
             response = tool_result.final_response
             used_tools = tool_result.used_tools

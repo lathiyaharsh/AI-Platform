@@ -34,7 +34,8 @@ class Settings(BaseSettings):
     # AI
     # ==========================
     default_provider: str = "groq"
-    default_model: str = "llama-3.3-70b-versatile"
+    # Groq retired llama-3.3-70b-versatile (2026-08-16); use gpt-oss-120b.
+    default_model: str = "openai/gpt-oss-120b"
 
     # ==========================
     # Features
@@ -49,7 +50,7 @@ class Settings(BaseSettings):
     # Reflection
     # ==========================
     reflection_provider: str = "groq"
-    reflection_model: str = "llama-3.3-70b-versatile"
+    reflection_model: str = "openai/gpt-oss-120b"
     reflection_threshold: float = 0.7
     max_reflections: int = 1
 
@@ -57,7 +58,7 @@ class Settings(BaseSettings):
     # Tools
     # ==========================
     tools_provider: str = "groq"
-    tools_model: str = "llama-3.3-70b-versatile"
+    tools_model: str = "openai/gpt-oss-120b"
     tool_timeout_seconds: float = 15.0
     max_tool_iterations: int = 3
 

@@ -7,6 +7,13 @@ from app.gateway.providers.exceptions import ProviderError
 _DEFAULT_GEMINI_MODEL = "gemini-2.5-flash"
 
 
+def _resolve_gemini_model(model: str | None) -> str:
+    """Ignore non-Gemini ids (e.g. Groq tools_model leaked into fallback)."""
+    if model and model.lower().startswith("gemini"):
+        return model
+    return _DEFAULT_GEMINI_MODEL
+
+
 class GeminiProvider(BaseProvider):
     def __init__(self):
         self.client = genai.Client(api_key=settings.gemini_api_key)
@@ -25,7 +32,7 @@ class GeminiProvider(BaseProvider):
 
         try:
             response = self.client.models.generate_content(
-                model=model or _DEFAULT_GEMINI_MODEL,
+                model=_resolve_gemini_model(model),
                 contents=full_prompt,
             )
 
