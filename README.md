@@ -1,6 +1,6 @@
 # 🚀 Production AI Platform
 
-> **A production-ready AI backend built with FastAPI, LangChain, LlamaIndex, and modern AI engineering principles.**
+> **A production-ready AI backend built with FastAPI and modern AI engineering principles.**
 
 This repository is my learning journey and long-term project to build an **end-to-end Production AI System** similar to the architecture used by ChatGPT, Cursor, Claude Code, Perplexity, and other enterprise AI applications.
 
@@ -68,104 +68,60 @@ Every new concept I learn will be integrated into this project.
 # 📂 Project Structure
 
 ```text
-app/
-
-├── api/
-│   ├── routes/
-│   ├── middleware/
-│   ├── dependencies/
-│   └── schemas/
-│
-├── gateway/
-│   ├── gateway.py
-│   ├── router.py
-│   ├── decision.py
-│   └── providers/
-│
-├── prompts/
-│   ├── manager.py
-│   ├── versioning.py
-│   ├── registry.py
-│   └── templates/
-│
-├── cache/
-│   ├── exact_cache.py
-│   ├── semantic_cache.py
-│   └── embeddings.py
-│
-├── memory/
-│   ├── conversation.py
-│   ├── long_term.py
-│   ├── retrieval.py
-│   └── context_builder.py
-│
-├── reflection/
-│   ├── __init__.py
-│   ├── models.py
-│   ├── service.py
-│   ├── prompts.py
-│   └── types.py
-│
-├── tools/
-│   ├── __init__.py
-│   ├── base.py
-│   ├── types.py
-│   ├── models.py
-│   ├── registry.py
-│   ├── executor.py
-│   ├── service.py
-│   ├── prompts.py
-│   └── providers/
-│       ├── weather.py
-│       ├── calculator.py
-│       ├── datetime.py
-│       └── uuid_generator.py
-│
-├── rag/
-│   ├── __init__.py
-│   ├── service.py
-│   ├── models.py
-│   ├── types.py
-│   ├── constants.py
-│   ├── pipeline.py
-│   ├── chunking.py
-│   ├── retriever.py
-│   ├── reranker.py
-│   ├── context.py
-│   ├── storage.py
-│   └── loaders/
-│       ├── base.py
-│       ├── pdf_loader.py
-│       ├── text_loader.py
-│       └── markdown_loader.py
-│
-├── observability/
-│   ├── __init__.py
-│   ├── service.py
-│   ├── models.py
-│   ├── types.py
-│   ├── metrics.py
-│   ├── events.py
-│   ├── logger.py
-│   ├── collector.py
-│   ├── cost.py
-│   └── tracing.py
-│
-├── background/
-│   ├── jobs.py
-│   ├── workers.py
-│   └── scheduler.py
-│
-├── llm/
-│
-├── services/
-│
-├── database/
-│
-├── config/
-│
-└── main.py
+backend/
+├── main.py                 # FastAPI Cloud / CLI entry (re-exports app)
+├── pyproject.toml
+├── .env.example
+└── app/
+    ├── main.py             # FastAPI app + lifespan (pgvector warmup)
+    ├── api/
+    │   ├── routes/         # chat.py, rag.py
+    │   ├── middleware/     # logging.py
+    │   ├── dependencies/   # gateway DI
+    │   └── schemas/        # chat.py, rag.py
+    ├── gateway/
+    │   ├── gateway.py
+    │   ├── router.py
+    │   ├── decision.py
+    │   └── providers/      # groq, gemini
+    ├── prompts/
+    │   ├── manager.py
+    │   ├── versioning.py
+    │   ├── registry.py
+    │   └── templates/
+    ├── cache/
+    │   ├── exact_cache.py
+    │   ├── semantic_cache.py
+    │   └── semantic_item.py
+    ├── memory/
+    │   ├── service.py
+    │   ├── long_term.py
+    │   ├── store.py
+    │   ├── models.py
+    │   ├── types.py
+    │   └── context_builder.py
+    ├── reflection/
+    ├── tools/
+    │   └── providers/      # weather, calculator, datetime, uuid
+    ├── rag/
+    │   ├── service.py
+    │   ├── pipeline.py
+    │   ├── storage.py      # MemoryVectorStore
+    │   ├── pgvector_store.py
+    │   ├── retriever.py
+    │   └── loaders/
+    ├── embeddings/
+    │   ├── service.py
+    │   └── providers/      # huggingface
+    ├── db/
+    │   └── postgres.py     # asyncpg pool (Supabase)
+    ├── observability/
+    ├── config/
+    └── utils/
+        └── similarity.py
 ```
+
+Planned (not implemented yet): background workers/scheduler, Redis, auth.
 
 ---
 
@@ -354,9 +310,11 @@ Used for:
 
 ## Future Infrastructure
 
+- Background jobs / workers / scheduler
 - Redis
 - Docker
 - Kubernetes
+- Authentication
 
 ---
 
@@ -528,7 +486,7 @@ ENABLE_JSON_LOGGING=true
 
 # 🚧 Roadmap
 
-> **Current progress:** Phases 1–8 core path is live (`POST /chat` / `POST /chat/rag` → router → long-term memory → RAG retrieve → context builder → versioned prompts → exact/semantic cache → tool loop → Groq/Gemini with retry/fallback → reflection → conversation memory + document catalog → ObservabilityService request summary). Vector persistence uses Supabase Postgres + pgvector (`VECTOR_STORE=pgvector`); Redis and multi-agent work are still ahead.
+> **Current progress:** Phases 1–8 core path is live (`POST /chat` / `POST /chat/rag` → router → long-term memory → RAG retrieve → context builder → versioned prompts → exact/semantic cache → tool loop → Groq/Gemini with retry/fallback → reflection → conversation memory + document catalog → ObservabilityService). Vectors persist via Supabase Postgres + pgvector (`VECTOR_STORE=pgvector`). Empty scaffold folders (`background/`, `database/`, empty `docs/`, empty `tests/`) were removed. Still ahead: background workers, Redis, auth, multi-agent.
 
 ## Phase 1 — Production AI Gateway
 
@@ -596,6 +554,15 @@ ENABLE_JSON_LOGGING=true
 - [x] Token usage + CostEstimator (Groq / Gemini)
 - [x] Pluggable collector (OTel / Prometheus / Langfuse / Helicone / Phoenix ready)
 - [x] Tracing bridge (exporter hooks without Gateway changes)
+
+---
+
+## Phase 9 — Background jobs (planned)
+
+- [ ] Job definitions (`jobs.py`)
+- [ ] Workers (ingest / reindex / embedding batches)
+- [ ] Scheduler
+- [ ] Queue backend (e.g. Redis)
 
 ---
 
